@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RESILIA · Gestión de Emergencias</title>
+<style>
+:root {
+  --red: #c0392b;
+  --red-dark: #7b1818;
+  --orange: #f39c12;
+  --yellow: #f1c40f;
+  --navy: #1a2980;
+  --navy-dark: #1e2c5a;
+  --teal: #26d0ce;
+  --green: #27ae60;
+  --green-d: #1e7e3c;
+  --purple: #6a1b9a;
+  --blue: #3498db;
+  --dark: #1a1a2e;
+  --grey: #555;
+  --soft: #f4f6fa;
+
+  --combate:  #e74c3c;
+  --rescate:  #2980b9;
+  --evacua:   #27ae60;
+  --comunica: #f1c40f;
+  --any:      #7f8c8d;
+  --resp:     #34495e;
+  --all:      #8e44ad;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  background: linear-gradient(135deg, #fdfdfd 0%, #eef2f8 100%);
+  color: var(--dark); overflow-x: hidden;
+}
+
+.screen { display: none; min-height: 100vh; padding: 20px; }
+.screen.active { display: block; }
+
+/* ============ SPLASH ============ */
+#splash {
+  display: none;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--navy-dark) 0%, var(--red-dark) 100%);
+  color: white; text-align: center;
+  flex-direction: column; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+  padding: 30px 20px 80px;
+}
+#splash.active { display: flex; }
+#splash::before {
+  content: ""; position: absolute; top: -10%; right: -10%;
+  width: 60%; height: 60%;
+  background: radial-gradient(circle, rgba(243,156,18,0.20), transparent 70%);
+  z-index: 0;
+}
+#splash::after {
+  content: ""; position: absolute; bottom: -10%; left: -10%;
+  width: 60%; height: 60%;
+  background: radial-gradient(circle, rgba(38,208,206,0.18), transparent 70%);
+  z-index: 0;
+}
+#splash .logo-wrap { z-index: 2; margin-bottom: 18px; }
+#splash svg.brand { width: 240px; height: 240px;
+  filter: drop-shadow(0 8px 20px rgba(0,0,0,0.5)); }
+#splash h1 {
+  z-index: 2; font-size: 96px; letter-spacing: 6px; font-weight: 900;
+  background: linear-gradient(135deg, #fff, var(--orange) 50%, var(--yellow));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin-bottom: 6px;
+}
+#splash .tagline {
+  z-index: 2; font-size: 18px; color: rgba(255,255,255,0.85);
+  font-style: italic; margin-bottom: 50px; letter-spacing: 1px;
+}
+.btn-primary {
+  z-index: 2;
+  background: linear-gradient(135deg, var(--red), var(--orange));
+  color: white; border: none; padding: 20px 50px;
+  font-size: 22px; font-weight: 700; border-radius: 50px;
+  cursor: pointer; letter-spacing: 1px;
+  box-shadow: 0 8px 24px rgba(192,57,43,0.55);
+  transition: transform 0.18s, box-shadow 0.18s;
+}
+.btn-primary:hover { transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 14px 30px rgba(192,57,43,0.7); }
+
+#splash .copyright {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: rgba(0,0,0,0.35); padding: 14px 20px;
+  color: rgba(255,255,255,0.92); font-size: 13px;
+  text-align: center; z-index: 3; line-height: 1.5;
+}
+#splash .copyright strong { color: var(--orange); }
+#splash .copyright .small { display: block; font-size: 11px;
+  color: rgba(255,255,255,0.65); margin-top: 4px; }
+
+/* ============ MENU ============ */
+#menu { background: linear-gradient(135deg, #f8fafd 0%, #ffffff 100%); }
+#menu .nav-bar { display: flex; align-items: center; gap: 18px; margin-bottom: 30px; }
+.nav-bar svg.brand { width: 72px; height: 72px; }
+.nav-bar h2 { font-size: 28px; color: var(--red); font-weight: 900; letter-spacing: 1px; }
+.nav-bar .nav-sub { color: var(--grey); font-size: 14px; }
+.menu-title { text-align: center; font-size: 32px; color: var(--navy);
+  font-weight: 800; margin: 30px 0 8px; }
+.menu-sub { text-align: center; color: var(--grey); font-size: 16px; margin-bottom: 40px; }
+.emergencies-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px; max-width: 1100px; margin: 0 auto;
+}
+.emg-tile {
+  background: white; border-radius: 18px; padding: 28px 24px;
+  text-align: center; cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+  transition: transform 0.18s, box-shadow 0.18s;
+  border-top: 6px solid transparent;
+}
+.emg-tile:hover { transform: translateY(-5px);
+  box-shadow: 0 16px 32px rgba(0,0,0,0.15); }
+.emg-tile .icon-circle {
+  width: 90px; height: 90px; border-radius: 50%; margin: 0 auto 16px;
+  display: flex; align-items: center; justify-content: center; color: white;
+}
+.emg-tile .icon-circle svg { width: 50px; height: 50px; }
+.emg-tile h3 { font-size: 20px; color: var(--navy); margin-bottom: 6px; letter-spacing: 0.5px; }
+.emg-tile p { color: var(--grey); font-size: 13px; line-height: 1.4; }
+.emg-tile.sismo { border-top-color: var(--purple); }
+.emg-tile.sismo .icon-circle { background: linear-gradient(135deg, var(--purple), var(--blue)); }
+.emg-tile.incendio { border-top-color: var(--red); }
+.emg-tile.incendio .icon-circle { background: linear-gradient(135deg, var(--red), var(--orange)); }
+.emg-tile.medica { border-top-color: var(--green); }
+.emg-tile.medica .icon-circle { background: linear-gradient(135deg, var(--green), var(--teal)); }
+.emg-tile.simulacro { border-top-color: var(--navy); }
+.emg-tile.simulacro .icon-circle { background: linear-gradient(135deg, var(--navy), var(--teal)); }
+
+.brigades-legend {
+  max-width: 1100px; margin: 50px auto 30px;
+  background: white; border-radius: 16px; padding: 24px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+}
+.brigades-legend h3 { font-size: 18px; color: var(--navy); margin-bottom: 16px; text-align: center; }
+.legend-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+.legend-chip {
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+  border-radius: 10px; border: 1px solid #e6e8ef;
+}
+.legend-color { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #ccc; }
+.legend-chip .legend-name { font-size: 14px; font-weight: 600; color: var(--dark); }
+
+/* ============ EMERGENCY ============ */
+#emergency { background: linear-gradient(135deg, #f3f5fa 0%, #ffffff 100%); padding-bottom: 120px; }
+.emg-header {
+  display: flex; justify-content: space-between; align-items: center;
+  background: white; padding: 16px 24px; border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.06); margin-bottom: 20px;
+}
+.emg-header .left { display: flex; align-items: center; gap: 14px; }
+.emg-header svg.brand { width: 56px; height: 56px; }
+.emg-header .title-block h2 { font-size: 22px; color: var(--navy); margin-bottom: 2px; }
+.emg-header .title-block p { color: var(--grey); font-size: 13px; }
+.emg-header .step-block { text-align: right; }
+.emg-header .step-block .step-num { font-size: 14px; color: var(--grey); margin-bottom: 4px; }
+.emg-header .step-block .step-val { font-size: 28px; font-weight: 900; color: var(--red); }
+
+.alerts-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px; max-width: 1200px; margin: 0 auto;
+}
+.empty-state {
+  background: white; border-radius: 14px; padding: 40px 24px;
+  text-align: center; color: var(--grey); font-size: 15px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+}
+
+.alert-card {
+  background: white; border-radius: 14px; padding: 20px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.10);
+  border-left: 8px solid var(--any);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.3s;
+  position: relative;
+  min-height: 180px;
+  display: flex; flex-direction: column; justify-content: space-between;
+}
+.alert-card:hover { transform: translateY(-2px); }
+.alert-card.brigade-primeros-auxilios { border-left-color: #cccccc; }
+.alert-card.brigade-combate-de-incendios { border-left-color: var(--combate); }
+.alert-card.brigade-busqueda-y-rescate { border-left-color: var(--rescate); }
+.alert-card.brigade-evacuacion { border-left-color: var(--evacua); }
+.alert-card.brigade-comunicacion { border-left-color: var(--comunica); }
+.alert-card.brigade-cualquier-brigada { border-left-color: var(--any); }
+.alert-card.brigade-responsable-del-inmueble { border-left-color: var(--resp); }
+.alert-card.brigade-todas-las-brigadas { border-left-color: var(--all); }
+
+.alert-card .brigade-tag {
+  display: inline-block; padding: 4px 10px;
+  border-radius: 10px; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  background: #f4f6fa; color: var(--navy); border: 1px solid #e6e8ef;
+}
+.alert-card .alert-text {
+  font-size: 18px; font-weight: 700; color: var(--dark);
+  line-height: 1.35; flex: 1;
+}
+.alert-card .alert-status {
+  margin-top: 12px;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 12px; color: var(--grey);
+}
+.alert-card .deactivate-hint { font-weight: 700; color: var(--red); }
+
+/* ACTIVE */
+.alert-card.active { animation: blink-alert 0.9s infinite alternate; color: white; }
+.alert-card.active .alert-text { color: white; }
+.alert-card.active .alert-status { color: rgba(255,255,255,0.9); }
+.alert-card.active .deactivate-hint { color: white; }
+.alert-card.active .brigade-tag {
+  background: rgba(255,255,255,0.2); color: white; border-color: rgba(255,255,255,0.4);
+}
+@keyframes blink-alert {
+  0%   { box-shadow: 0 4px 14px rgba(0,0,0,0.10); filter: brightness(1); }
+  100% { box-shadow: 0 8px 30px rgba(231,76,60,0.7); filter: brightness(1.1); }
+}
+.alert-card.active.brigade-primeros-auxilios {
+  background: linear-gradient(135deg, #ffffff, #f8f9fa);
+  border: 3px solid var(--red); color: var(--dark);
+}
+.alert-card.active.brigade-primeros-auxilios .alert-text,
+.alert-card.active.brigade-primeros-auxilios .alert-status,
+.alert-card.active.brigade-primeros-auxilios .deactivate-hint { color: var(--dark); }
+.alert-card.active.brigade-primeros-auxilios .brigade-tag { background: var(--dark); color: white; }
+.alert-card.active.brigade-combate-de-incendios { background: linear-gradient(135deg, var(--combate), #c0392b); }
+.alert-card.active.brigade-busqueda-y-rescate { background: linear-gradient(135deg, var(--rescate), #1f6391); }
+.alert-card.active.brigade-evacuacion { background: linear-gradient(135deg, var(--evacua), var(--green-d)); }
+.alert-card.active.brigade-comunicacion {
+  background: linear-gradient(135deg, var(--comunica), #d4ac0d); color: var(--dark);
+}
+.alert-card.active.brigade-comunicacion .alert-text,
+.alert-card.active.brigade-comunicacion .alert-status,
+.alert-card.active.brigade-comunicacion .deactivate-hint { color: var(--dark); }
+.alert-card.active.brigade-comunicacion .brigade-tag { background: var(--dark); color: white; }
+.alert-card.active.brigade-cualquier-brigada { background: linear-gradient(135deg, #7f8c8d, #95a5a6); }
+.alert-card.active.brigade-responsable-del-inmueble { background: linear-gradient(135deg, var(--resp), #2c3e50); }
+.alert-card.active.brigade-todas-las-brigadas { background: linear-gradient(135deg, var(--all), #6a1b9a); }
+
+/* AVAILABLE (optional) */
+.alert-card.available {
+  background: white; border: 2px dashed #b0b8c5; cursor: pointer;
+}
+.alert-card.available::after {
+  content: "⊕ OPCIONAL"; position: absolute; top: 14px; right: 14px;
+  background: var(--orange); color: white; padding: 4px 10px;
+  font-size: 11px; font-weight: 700; border-radius: 10px; letter-spacing: 0.5px;
+}
+.alert-card.available .activate-btn {
+  background: var(--orange); color: white; border: none;
+  padding: 10px 16px; border-radius: 8px; font-weight: 700;
+  cursor: pointer; font-size: 13px; margin-top: 10px; letter-spacing: 0.5px;
+}
+.alert-card.available .activate-btn:hover { background: var(--red); }
+
+/* Step badge */
+.step-badge {
+  display: inline-block; background: var(--navy); color: white;
+  font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 8px;
+  margin-right: 8px;
+}
+.alert-card.active .step-badge { background: rgba(0,0,0,0.35); color: white; }
+.alert-card.active.brigade-primeros-auxilios .step-badge,
+.alert-card.active.brigade-comunicacion .step-badge { background: var(--dark); color: white; }
+
+.pause-banner {
+  background: linear-gradient(90deg, var(--orange), var(--yellow));
+  color: var(--dark); border-radius: 12px; padding: 16px;
+  text-align: center; font-weight: 700; margin: 20px auto;
+  max-width: 1200px; box-shadow: 0 4px 14px rgba(0,0,0,0.1); font-size: 16px;
+}
+.pause-banner .countdown { font-size: 28px; color: var(--red); margin-left: 10px; }
+
+/* Permanent controls */
+.permanent-controls {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  display: flex; justify-content: space-between; align-items: end;
+  padding: 16px 22px; pointer-events: none; z-index: 999;
+}
+.permanent-controls > * { pointer-events: auto; }
+.speed-control {
+  background: white; border-radius: 16px; padding: 12px 18px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  display: flex; align-items: center; gap: 12px;
+  border: 2px solid var(--navy);
+}
+.speed-control .speed-label { font-size: 12px; color: var(--grey); font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px; }
+.speed-control .speed-val { font-size: 22px; font-weight: 900; color: var(--navy);
+  min-width: 55px; text-align: center; }
+.speed-control button {
+  width: 36px; height: 36px; border-radius: 50%; border: none;
+  background: var(--navy); color: white; font-size: 18px; cursor: pointer; font-weight: bold;
+}
+.speed-control button:hover { background: var(--red); }
+.stop-control button {
+  background: var(--red); color: white; border: none; padding: 14px 28px;
+  font-size: 16px; font-weight: 700; border-radius: 50px;
+  cursor: pointer; letter-spacing: 0.5px;
+  box-shadow: 0 6px 20px rgba(192,57,43,0.55);
+  border: 3px solid white;
+}
+.stop-control button::before { content: "⏹  "; font-size: 18px; }
+.stop-control button:hover { background: #a93226; transform: translateY(-2px); }
+
+/* MODAL */
+.modal-bg {
+  display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7); z-index: 2000;
+  align-items: center; justify-content: center;
+}
+.modal-bg.active { display: flex; }
+.modal {
+  background: white; border-radius: 16px; padding: 30px;
+  max-width: 500px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.modal h3 { font-size: 22px; color: var(--navy); margin-bottom: 12px; }
+.modal p { font-size: 15px; color: var(--grey); margin-bottom: 18px; line-height: 1.5; }
+.modal input {
+  width: 100%; padding: 14px 16px; font-size: 18px;
+  border: 2px solid #e6e8ef; border-radius: 10px;
+  font-family: inherit; margin-bottom: 18px;
+}
+.modal input:focus { outline: none; border-color: var(--navy); }
+.modal .modal-buttons { display: flex; gap: 10px; justify-content: flex-end; }
+.modal button { padding: 12px 24px; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; }
+.modal button.primary { background: var(--navy); color: white; }
+.modal button.primary:hover { background: var(--red); }
+.modal button.secondary { background: #e6e8ef; color: var(--dark); }
+
+/* REPORT */
+#report { background: linear-gradient(135deg, #f3f5fa 0%, #fff 100%); padding: 30px; }
+.report-header { text-align: center; margin-bottom: 30px; }
+.report-header .check-circle {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--green), var(--teal));
+  margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 40px; font-weight: bold;
+  box-shadow: 0 8px 24px rgba(39,174,96,0.4);
+}
+.report-header h2 { font-size: 30px; color: var(--navy); margin-bottom: 6px; }
+.report-header p { color: var(--grey); font-size: 15px; }
+
+.report-meta {
+  max-width: 900px; margin: 0 auto 30px;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+.report-meta .meta-card {
+  background: white; border-radius: 12px; padding: 18px;
+  text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  border-top: 4px solid var(--navy);
+}
+.meta-card .meta-label { font-size: 12px; color: var(--grey);
+  text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.meta-card .meta-val { font-size: 26px; font-weight: 900; color: var(--red); }
+
+.report-table-wrap {
+  max-width: 1000px; margin: 0 auto; background: white;
+  border-radius: 14px; padding: 20px; box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+}
+.report-table-wrap h3 { color: var(--navy); margin-bottom: 14px; font-size: 18px; }
+.report-table { width: 100%; border-collapse: collapse; }
+.report-table th, .report-table td {
+  padding: 12px 10px; text-align: left;
+  border-bottom: 1px solid #eef0f5; font-size: 14px;
+}
+.report-table th {
+  background: var(--navy); color: white;
+  text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px;
+}
+.report-table tr:hover { background: #f9fafc; }
+.report-table .badge {
+  display: inline-block; padding: 3px 10px; border-radius: 10px;
+  font-size: 11px; font-weight: 700; color: white;
+}
+
+.report-actions {
+  text-align: center; margin: 40px 0 60px;
+  display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;
+}
+.report-actions button {
+  padding: 14px 30px; font-size: 15px; font-weight: 700;
+  border: none; border-radius: 50px; cursor: pointer;
+}
+.report-actions .print-btn { background: var(--navy); color: white; }
+.report-actions .home-btn { background: linear-gradient(135deg, var(--red), var(--orange)); color: white; }
+
+@media print {
+  .permanent-controls, .report-actions { display: none !important; }
+  body { background: white; } #report { padding: 20px; }
+}
+@media (max-width: 768px) {
+  #splash h1 { font-size: 64px; } #splash svg.brand { width: 180px; height: 180px; }
+  .menu-title { font-size: 24px; }
+  .alerts-grid { grid-template-columns: 1fr; }
+  .nav-bar h2 { font-size: 22px; }
+  .stop-control button { padding: 10px 18px; font-size: 13px; }
+  .speed-control { padding: 8px 12px; gap: 8px; }
+  .speed-control .speed-val { font-size: 18px; min-width: 40px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ SPLASH ============ -->
+<div id="splash" class="active">
+  <div class="logo-wrap">
+    <svg class="brand" viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="rShieldS" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#e74c3c"/>
+          <stop offset="100%" stop-color="#962416"/>
+        </linearGradient>
+        <linearGradient id="rHelmS" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#e74c3c"/>
+          <stop offset="100%" stop-color="#7e1f15"/>
+        </linearGradient>
+        <linearGradient id="rFlameS" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#ffd54f"/>
+          <stop offset="50%" stop-color="#ff8c00"/>
+          <stop offset="100%" stop-color="#c0392b"/>
+        </linearGradient>
+        <linearGradient id="rOrangeS" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#f39c12"/>
+          <stop offset="100%" stop-color="#d35400"/>
+        </linearGradient>
+        <linearGradient id="rGrayS" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#6c727a"/>
+          <stop offset="100%" stop-color="#2c3034"/>
+        </linearGradient>
+      </defs>
+      <!-- Hexagonal shield outline -->
+      <path d="M160 30 L265 80 L265 175 Q265 245 160 295 Q55 245 55 175 L55 80 Z"
+            fill="none" stroke="url(#rShieldS)" stroke-width="14"
+            stroke-linejoin="round" stroke-linecap="round"/>
+      <!-- Firefighter helmet body -->
+      <path d="M100 175 Q100 110 160 110 Q220 110 220 175 Z" fill="url(#rHelmS)"/>
+      <!-- Center crest ridge -->
+      <path d="M152 110 Q160 105 168 110 L168 175 L152 175 Z" fill="#5b1610" opacity="0.75"/>
+      <!-- Side contour lines -->
+      <path d="M112 160 Q112 130 138 122" fill="none" stroke="#5b1610" stroke-width="2.5" opacity="0.7"/>
+      <path d="M208 160 Q208 130 182 122" fill="none" stroke="#5b1610" stroke-width="2.5" opacity="0.7"/>
+      <!-- Brim -->
+      <path d="M80 175 Q160 192 240 175 L235 188 Q160 204 85 188 Z" fill="#7e1f15"/>
+      <!-- Visor -->
+      <path d="M105 178 L215 178 L213 186 L107 186 Z" fill="#1a1a1a" opacity="0.55"/>
+      <!-- Flame torch -->
+      <g transform="translate(225, 38)">
+        <path d="M0 60 Q-16 35 5 8 Q9 30 16 6 Q24 28 32 10 Q44 35 34 65 Q24 50 14 55 Q0 65 0 60 Z"
+              fill="url(#rFlameS)"/>
+        <path d="M10 48 Q5 28 14 16 Q18 28 20 48 Z" fill="#ffe082" opacity="0.7"/>
+      </g>
+      <!-- Orange diagonal slash -->
+      <path d="M278 145 L30 230" stroke="url(#rOrangeS)" stroke-width="20"
+            stroke-linecap="round" fill="none"/>
+      <!-- Gray diagonal slash -->
+      <path d="M285 210 L45 290" stroke="url(#rGrayS)" stroke-width="16"
+            stroke-linecap="round" fill="none"/>
+      <!-- EKG heartbeat line -->
+      <polyline points="55,235 100,235 118,205 138,260 158,180 178,260 198,205 218,235 260,235"
+                fill="none" stroke="url(#rGrayS)" stroke-width="9"
+                stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <h1>RESILIA</h1>
+  <div class="tagline">Resiliencia organizacional ante emergencias</div>
+  <button class="btn-primary" onclick="goToMenu()">🚨 INICIAR EMERGENCIA</button>
+
+  <div class="copyright">
+    <strong>RESILIA</strong> es un proyecto del <strong>Tecnológico Nacional de México</strong> ·
+    Instituto Tecnológico de Iguala · <strong>InnovaTec 2026</strong>
+    <span class="small">© Derechos reservados — Equipo RESILIA · Folio 68455-17 · Etapa Local, Región 5</span>
+  </div>
+</div>
+
+<!-- ============ MENU ============ -->
+<div id="menu" class="screen">
+  <div class="nav-bar">
+    <svg class="brand" viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="rShieldM" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#e74c3c"/><stop offset="100%" stop-color="#962416"/>
+        </linearGradient>
+        <linearGradient id="rHelmM" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#e74c3c"/><stop offset="100%" stop-color="#7e1f15"/>
+        </linearGradient>
+        <linearGradient id="rFlameM" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#ffd54f"/><stop offset="50%" stop-color="#ff8c00"/><stop offset="100%" stop-color="#c0392b"/>
+        </linearGradient>
+        <linearGradient id="rOrangeM" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#f39c12"/><stop offset="100%" stop-color="#d35400"/>
+        </linearGradient>
+        <linearGradient id="rGrayM" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#6c727a"/><stop offset="100%" stop-color="#2c3034"/>
+        </linearGradient>
+      </defs>
+      <path d="M160 30 L265 80 L265 175 Q265 245 160 295 Q55 245 55 175 L55 80 Z"
+            fill="none" stroke="url(#rShieldM)" stroke-width="14" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M100 175 Q100 110 160 110 Q220 110 220 175 Z" fill="url(#rHelmM)"/>
+      <path d="M152 110 Q160 105 168 110 L168 175 L152 175 Z" fill="#5b1610" opacity="0.75"/>
+      <path d="M80 175 Q160 192 240 175 L235 188 Q160 204 85 188 Z" fill="#7e1f15"/>
+      <path d="M105 178 L215 178 L213 186 L107 186 Z" fill="#1a1a1a" opacity="0.55"/>
+      <g transform="translate(225, 38)">
+        <path d="M0 60 Q-16 35 5 8 Q9 30 16 6 Q24 28 32 10 Q44 35 34 65 Q24 50 14 55 Q0 65 0 60 Z" fill="url(#rFlameM)"/>
+      </g>
+      <path d="M278 145 L30 230" stroke="url(#rOrangeM)" stroke-width="20" stroke-linecap="round" fill="none"/>
+      <path d="M285 210 L45 290" stroke="url(#rGrayM)" stroke-width="16" stroke-linecap="round" fill="none"/>
+      <polyline points="55,235 100,235 118,205 138,260 158,180 178,260 198,205 218,235 260,235"
+                fill="none" stroke="url(#rGrayM)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div>
+      <h2>RESILIA</h2>
+      <div class="nav-sub">Gestión inteligente de emergencias</div>
+    </div>
+  </div>
+
+  <h1 class="menu-title">Selecciona el tipo de emergencia</h1>
+  <p class="menu-sub">La plataforma activará la secuencia automatizada de alertas para las brigadas</p>
+
+  <div class="emergencies-grid">
+    <div class="emg-tile sismo" onclick="startEmergency('sismo')">
+      <div class="icon-circle">
+        <svg viewBox="0 0 60 60" stroke="white" stroke-width="3" fill="none" stroke-linecap="round">
+          <path d="M5 20 Q12 12 20 20 Q28 28 36 20 Q44 12 55 20"/>
+          <path d="M5 30 Q12 22 20 30 Q28 38 36 30 Q44 22 55 30"/>
+          <path d="M5 40 Q12 32 20 40 Q28 48 36 40 Q44 32 55 40"/>
+        </svg>
+      </div>
+      <h3>SISMO</h3>
+      <p>Activación de protocolos de evacuación y censo en puntos de reunión</p>
+    </div>
+    <div class="emg-tile incendio" onclick="startEmergency('incendio')">
+      <div class="icon-circle">
+        <svg viewBox="0 0 60 60" fill="white">
+          <path d="M30 5 Q15 25 22 40 Q24 32 30 32 Q28 22 38 12 Q40 26 34 36 Q42 30 46 20 Q52 36 42 50 Q34 42 30 45 Q18 42 16 32 Q14 20 30 5 Z"/>
+        </svg>
+      </div>
+      <h3>INCENDIO</h3>
+      <p>Coordinación de extintores, evacuación y control de propagación</p>
+    </div>
+    <div class="emg-tile medica" onclick="startEmergency('medica')">
+      <div class="icon-circle">
+        <svg viewBox="0 0 60 60" fill="white">
+          <rect x="25" y="10" width="10" height="40" rx="2"/>
+          <rect x="10" y="25" width="40" height="10" rx="2"/>
+        </svg>
+      </div>
+      <h3>EMERGENCIA MÉDICA</h3>
+      <p>Atención inmediata, traslado de heridos y notificación a hospital</p>
+    </div>
+    <div class="emg-tile simulacro" onclick="startEmergency('simulacro')">
+      <div class="icon-circle">
+        <svg viewBox="0 0 60 60" fill="white">
+          <circle cx="18" cy="18" r="6"/>
+          <rect x="11" y="26" width="14" height="22" rx="3"/>
+          <circle cx="42" cy="18" r="6"/>
+          <rect x="35" y="26" width="14" height="22" rx="3"/>
+        </svg>
+      </div>
+      <h3>SIMULACRO</h3>
+      <p>Ejecución guiada, medición de desempeño y evidencia digital</p>
+    </div>
+  </div>
+
+  <div class="brigades-legend">
+    <h3>🎨 Identificación visual de las 5 brigadas de Protección Civil</h3>
+    <div class="legend-grid">
+      <div class="legend-chip"><div class="legend-color" style="background:#ffffff;border-color:#666;"></div><div class="legend-name">Primeros Auxilios — BLANCO</div></div>
+      <div class="legend-chip"><div class="legend-color" style="background:var(--combate);"></div><div class="legend-name">Combate de Incendios — ROJO</div></div>
+      <div class="legend-chip"><div class="legend-color" style="background:var(--rescate);"></div><div class="legend-name">Búsqueda y Rescate — AZUL</div></div>
+      <div class="legend-chip"><div class="legend-color" style="background:var(--evacua);"></div><div class="legend-name">Evacuación — VERDE</div></div>
+      <div class="legend-chip"><div class="legend-color" style="background:var(--comunica);"></div><div class="legend-name">Comunicación — AMARILLO</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ EMERGENCY ============ -->
+<div id="emergency" class="screen">
+  <div class="emg-header">
+    <div class="left">
+      <svg class="brand" viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="rShieldE" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#e74c3c"/><stop offset="100%" stop-color="#962416"/>
+          </linearGradient>
+          <linearGradient id="rHelmE" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#e74c3c"/><stop offset="100%" stop-color="#7e1f15"/>
+          </linearGradient>
+          <linearGradient id="rFlameE" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#ffd54f"/><stop offset="50%" stop-color="#ff8c00"/><stop offset="100%" stop-color="#c0392b"/>
+          </linearGradient>
+          <linearGradient id="rOrangeE" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#f39c12"/><stop offset="100%" stop-color="#d35400"/>
+          </linearGradient>
+          <linearGradient id="rGrayE" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#6c727a"/><stop offset="100%" stop-color="#2c3034"/>
+          </linearGradient>
+        </defs>
+        <path d="M160 30 L265 80 L265 175 Q265 245 160 295 Q55 245 55 175 L55 80 Z"
+              fill="none" stroke="url(#rShieldE)" stroke-width="14" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="M100 175 Q100 110 160 110 Q220 110 220 175 Z" fill="url(#rHelmE)"/>
+        <path d="M152 110 Q160 105 168 110 L168 175 L152 175 Z" fill="#5b1610" opacity="0.75"/>
+        <path d="M80 175 Q160 192 240 175 L235 188 Q160 204 85 188 Z" fill="#7e1f15"/>
+        <path d="M105 178 L215 178 L213 186 L107 186 Z" fill="#1a1a1a" opacity="0.55"/>
+        <g transform="translate(225, 38)">
+          <path d="M0 60 Q-16 35 5 8 Q9 30 16 6 Q24 28 32 10 Q44 35 34 65 Q24 50 14 55 Q0 65 0 60 Z" fill="url(#rFlameE)"/>
+        </g>
+        <path d="M278 145 L30 230" stroke="url(#rOrangeE)" stroke-width="20" stroke-linecap="round" fill="none"/>
+        <path d="M285 210 L45 290" stroke="url(#rGrayE)" stroke-width="16" stroke-linecap="round" fill="none"/>
+        <polyline points="55,235 100,235 118,205 138,260 158,180 178,260 198,205 218,235 260,235"
+                  fill="none" stroke="url(#rGrayE)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="title-block">
+        <h2 id="emg-title">Emergencia</h2>
+        <p id="emg-elapsed">Tiempo transcurrido: 00:00</p>
+      </div>
+    </div>
+    <div class="step-block">
+      <div class="step-num">Actividad</div>
+      <div class="step-val"><span id="step-current">0</span> / <span id="step-total">0</span></div>
+    </div>
+  </div>
+
+  <div id="pause-banner" class="pause-banner" style="display:none;">
+    ⏳ Avanzando a la siguiente actividad en <span class="countdown" id="pause-countdown">8</span> s...
+  </div>
+
+  <div class="alerts-grid" id="alerts-container"></div>
+</div>
+
+<!-- ============ REPORT ============ -->
+<div id="report" class="screen">
+  <div class="report-header">
+    <div class="check-circle">✓</div>
+    <h2>Reporte de Emergencia</h2>
+    <p id="report-subtitle">Resumen de la gestión completada</p>
+  </div>
+
+  <div class="report-meta">
+    <div class="meta-card"><div class="meta-label">Tipo</div><div class="meta-val" id="report-type">—</div></div>
+    <div class="meta-card"><div class="meta-label">Duración total</div><div class="meta-val" id="report-duration">—</div></div>
+    <div class="meta-card"><div class="meta-label">Alertas gestionadas</div><div class="meta-val" id="report-alerts">—</div></div>
+    <div class="meta-card"><div class="meta-label">Personas evacuadas</div><div class="meta-val" id="report-evacuated">—</div></div>
+    <div class="meta-card"><div class="meta-label">Heridos detectados</div><div class="meta-val" id="report-heridos-nec">—</div></div>
+    <div class="meta-card"><div class="meta-label">Heridos atendidos</div><div class="meta-val" id="report-heridos-att">—</div></div>
+  </div>
+
+  <div class="report-table-wrap">
+    <h3>📋 Bitácora de actividades</h3>
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th>#</th><th>Alerta</th><th>Brigada Responsable</th>
+          <th>Activada</th><th>Desactivada</th><th>Duración</th>
+        </tr>
+      </thead>
+      <tbody id="report-tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="report-actions">
+    <button class="print-btn" onclick="window.print()">🖨️ Imprimir reporte</button>
+    <button class="home-btn" onclick="goToSplash()">🏠 Volver al inicio</button>
+  </div>
+</div>
+
+<!-- ============ MODAL ============ -->
+<div id="modal-bg" class="modal-bg">
+  <div class="modal">
+    <h3 id="modal-title">Confirmar</h3>
+    <p id="modal-text">Mensaje</p>
+    <input id="modal-input" type="text" placeholder="">
+    <div class="modal-buttons">
+      <button class="secondary" id="modal-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="primary" id="modal-ok" onclick="confirmModal()">Aceptar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PERMANENT CONTROLS ============ -->
+<div class="permanent-controls" id="permanent-controls" style="display:none;">
+  <div class="speed-control">
+    <span class="speed-label">Pausa entre actividades</span>
+    <button onclick="changeSpeed(-5)">−</button>
+    <div class="speed-val"><span id="speed-val">8</span>s</div>
+    <button onclick="changeSpeed(5)">+</button>
+  </div>
+  <div class="stop-control">
+    <button onclick="confirmStop()">DETENER EMERGENCIA</button>
+  </div>
+</div>
+
+<script>
+const BRIGADE_NAMES = {
+  "primeros-auxilios":         "Primeros Auxilios",
+  "combate-de-incendios":      "Combate de Incendios",
+  "busqueda-y-rescate":        "Búsqueda y Rescate",
+  "evacuacion":                "Evacuación",
+  "comunicacion":              "Comunicación",
+  "cualquier-brigada":         "Cualquier Brigada",
+  "responsable-del-inmueble":  "Responsable del Inmueble",
+  "todas-las-brigadas":        "Todas las Brigadas",
+};
+
+const EMERGENCIES = {
+  sismo: {
+    title: "🌐 Emergencia por SISMO",
+    steps: [
+      { n: 1, alerts: [{ text: "Activa Alerta de Sismo", brigade: "comunicacion" }] },
+      { n: 2, alerts: [
+        { text: "Activa Alerta de inicio de Evacuación", brigade: "evacuacion" },
+        { text: "Activa Alerta Botiquín", brigade: "primeros-auxilios" },
+        { text: "Activa Alerta de Tablero eléctrico", brigade: "combate-de-incendios" },
+        { text: "Activa Alerta de Gas", brigade: "combate-de-incendios" },
+      ]},
+      { n: 3, alerts: [
+        { text: "Activa Alerta de Punto de Reunión", brigade: "evacuacion" },
+        { text: "Activa Alerta de Contar Evacuados", brigade: "evacuacion" },
+      ]},
+      { n: 4, alerts: [
+        { text: "Activa Alerta de Búsqueda de personas faltantes", brigade: "busqueda-y-rescate" },
+        { text: "Activa Alerta de Heridos (opcional)", brigade: "busqueda-y-rescate", optional: true, askWoundedOnActivate: true },
+      ]},
+      { n: 5, alerts: [
+        { text: "Activa Alerta de Total de Evacuados y solicita número total", brigade: "evacuacion", askEvacuated: true },
+      ]},
+      { n: 6, alerts: [{ text: "Activa alerta de Atención de Heridos", brigade: "primeros-auxilios", askWoundedAttended: true }] },
+      { n: 7, alerts: [{ text: "Activa Alerta de Revisión de Inmueble", brigade: "combate-de-incendios" }] },
+      { n: 8, alerts: [{ text: "Activa Alerta de Aviso Espacio Seguro", brigade: "responsable-del-inmueble" }] },
+      { n: 9, alerts: [{ text: "Activa Alerta de Restablecer Electricidad", brigade: "combate-de-incendios" }] },
+      { n: 10, alerts: [{ text: "Activa Alerta de Reporte de Sismo", brigade: "responsable-del-inmueble", isFinal: true }] },
+    ]
+  },
+  incendio: {
+    title: "🔥 Emergencia por INCENDIO",
+    steps: [
+      { n: 1, alerts: [{ text: "Activa Alerta de Fuego e indica el área", brigade: "comunicacion", askArea: true }] },
+      { n: 2, alerts: [{ text: "Activa Alerta de Extintores (indicando área de incendio)", brigade: "combate-de-incendios" }] },
+      { n: 3, alerts: [
+        { text: "Activa Alerta de inicio de Evacuación", brigade: "evacuacion" },
+        { text: "Activa Alerta Botiquín", brigade: "primeros-auxilios" },
+        { text: "Activa Alerta de Tablero eléctrico", brigade: "combate-de-incendios" },
+        { text: "Activa Alerta de Gas", brigade: "combate-de-incendios" },
+        { text: "Activa alerta de Fuego Controlado", brigade: "combate-de-incendios" },
+      ]},
+      { n: 4, alerts: [
+        { text: "Activa alerta de Punto de Reunión", brigade: "evacuacion" },
+        { text: "Activa Alerta de Contar Evacuados", brigade: "evacuacion" },
+      ]},
+      { n: 5, alerts: [
+        { text: "Activa Alerta de Búsqueda de personas faltantes", brigade: "busqueda-y-rescate" },
+        { text: "Activa Alerta de Heridos (opcional)", brigade: "busqueda-y-rescate", optional: true, askWoundedOnActivate: true },
+      ]},
+      { n: 6, alerts: [{ text: "Activa alerta de Total de Evacuados y solicita número total", brigade: "evacuacion", askEvacuated: true }] },
+      { n: 7, alerts: [{ text: "Activa alerta de Atención de Heridos", brigade: "primeros-auxilios", askWoundedAttended: true }] },
+      { n: 8, alerts: [{ text: "Activa Alerta de Revisión de Inmueble", brigade: "combate-de-incendios" }] },
+      { n: 9, alerts: [{ text: "Activa Alerta de Aviso Espacio Seguro", brigade: "responsable-del-inmueble" }] },
+      { n: 10, alerts: [{ text: "Activa Alerta de Restablecer Electricidad", brigade: "combate-de-incendios" }] },
+      { n: 11, alerts: [{ text: "Alerta Fin de Fuego", brigade: "todas-las-brigadas" }] },
+      { n: 12, alerts: [{ text: "Activa Alerta de Reporte de Emergencia", brigade: "responsable-del-inmueble", isFinal: true }] },
+    ]
+  },
+  medica: {
+    title: "✚ EMERGENCIA MÉDICA",
+    steps: [
+      { n: 1, alerts: [{ text: "Activa Alerta de Emergencia Médica e indica el área", brigade: "primeros-auxilios", askArea: true }] },
+      { n: 2, alerts: [{ text: "Activa Alerta Botiquín", brigade: "primeros-auxilios" }] },
+      { n: 3, alerts: [{ text: "Activa Alerta de Traslado de Herido", brigade: "busqueda-y-rescate" }] },
+      { n: 4, alerts: [{ text: "Activa alerta de Atención de Heridos", brigade: "primeros-auxilios", askWoundedAttended: true }] },
+      { n: 5, alerts: [{ text: "Activa Alerta Hospital (notificar)", brigade: "comunicacion" }] },
+      { n: 6, alerts: [{ text: "Alerta Fin de Emergencia Médica", brigade: "todas-las-brigadas" }] },
+      { n: 7, alerts: [{ text: "Activa Alerta de Reporte de Emergencia", brigade: "responsable-del-inmueble", isFinal: true }] },
+    ]
+  },
+  simulacro: {
+    title: "🛡️ SIMULACRO",
+    steps: [
+      { n: 1, alerts: [{ text: "Activa Alerta de Simulacro / Sismo", brigade: "comunicacion" }] },
+      { n: 2, alerts: [
+        { text: "Activa Alerta de inicio de Evacuación", brigade: "evacuacion" },
+        { text: "Activa Alerta Botiquín", brigade: "primeros-auxilios" },
+        { text: "Activa Alerta de Tablero eléctrico", brigade: "combate-de-incendios" },
+        { text: "Activa Alerta de Gas", brigade: "combate-de-incendios" },
+      ]},
+      { n: 3, alerts: [
+        { text: "Activa alerta de Punto de Reunión", brigade: "evacuacion" },
+        { text: "Activa Alerta de Contar Evacuados", brigade: "evacuacion" },
+      ]},
+      { n: 4, alerts: [
+        { text: "Activa Alerta de Búsqueda de personas faltantes", brigade: "busqueda-y-rescate" },
+        { text: "Activa Alerta de Heridos (opcional)", brigade: "busqueda-y-rescate", optional: true, askWoundedOnActivate: true },
+      ]},
+      { n: 5, alerts: [{ text: "Activa alerta de Total de Evacuados y solicita número total", brigade: "evacuacion", askEvacuated: true }] },
+      { n: 6, alerts: [{ text: "Activa alerta de Atención de Heridos", brigade: "primeros-auxilios", askWoundedAttended: true }] },
+      { n: 7, alerts: [{ text: "Activa Alerta de Revisión de Inmueble", brigade: "combate-de-incendios" }] },
+      { n: 8, alerts: [{ text: "Activa Alerta de Aviso Espacio Seguro", brigade: "responsable-del-inmueble" }] },
+      { n: 9, alerts: [{ text: "Activa Alerta de Restablecer Electricidad", brigade: "combate-de-incendios" }] },
+      { n: 10, alerts: [{ text: "Activa Alerta de Reporte de Simulacro", brigade: "responsable-del-inmueble", isFinal: true }] },
+    ]
+  }
+};
+
+let state = {
+  currentEmergency: null, currentEmergencyKey: null,
+  currentStepIndex: -1, currentStep: null,
+  pauseSeconds: 8, pauseTimer: null, pauseCountdown: 0,
+  startedAt: null, elapsedTimer: null,
+  evacuatedCount: null, area: null,
+  heridosNecesarios: null, heridosAtendidos: null,
+  records: [], totalSteps: 0,
+};
+
+// ============ AUDIO ============
+let audioCtx = null;
+function beep(frequency = 880, duration = 220, type = 'square', volume = 0.20) {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch(e) { return; }
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = type; o.frequency.value = frequency;
+  g.gain.setValueAtTime(volume, audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration/1000);
+  o.connect(g).connect(audioCtx.destination);
+  o.start(); o.stop(audioCtx.currentTime + duration/1000);
+}
+function alertBeep() { beep(880, 180); setTimeout(() => beep(660, 220), 220); }
+function completionBeep() {
+  beep(523, 150); setTimeout(() => beep(659, 150), 160);
+  setTimeout(() => beep(784, 250), 320);
+}
+
+// ============ NAVIGATION ============
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('splash').classList.remove('active');
+  document.getElementById(id).classList.add('active');
+}
+function goToMenu() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+  }
+  showScreen('menu');
+  document.getElementById('permanent-controls').style.display = 'none';
+}
+function goToSplash() {
+  cleanupEmergency();
+  document.getElementById('splash').classList.add('active');
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('permanent-controls').style.display = 'none';
+}
+
+// ============ EMERGENCY ============
+function startEmergency(key) {
+  const emg = EMERGENCIES[key];
+  if (!emg) return;
+  const freshSteps = emg.steps.map(st => ({
+    n: st.n,
+    alerts: st.alerts.map(a => Object.assign({}, a, { _state: 'pending' }))
+  }));
+  state = {
+    currentEmergency: { title: emg.title, steps: freshSteps },
+    currentEmergencyKey: key,
+    currentStepIndex: -1, currentStep: null,
+    pauseSeconds: state.pauseSeconds || 8,
+    pauseTimer: null, pauseCountdown: 0,
+    startedAt: Date.now(), elapsedTimer: null,
+    evacuatedCount: null, area: null,
+    heridosNecesarios: null, heridosAtendidos: null,
+    records: [], totalSteps: freshSteps.length,
+  };
+  document.getElementById('emg-title').textContent = emg.title;
+  document.getElementById('step-total').textContent = freshSteps.length;
+  document.getElementById('permanent-controls').style.display = 'flex';
+  document.getElementById('speed-val').textContent = state.pauseSeconds;
+  showScreen('emergency');
+  state.elapsedTimer = setInterval(updateElapsed, 1000);
+  loadStep(0);
+}
+
+function updateElapsed() {
+  if (!state.startedAt) return;
+  const s = Math.floor((Date.now() - state.startedAt) / 1000);
+  const mm = String(Math.floor(s/60)).padStart(2,'0');
+  const ss = String(s % 60).padStart(2,'0');
+  document.getElementById('emg-elapsed').textContent = `Tiempo transcurrido: ${mm}:${ss}`;
+}
+
+function loadStep(idx) {
+  if (idx >= state.currentEmergency.steps.length) return;
+  state.currentStepIndex = idx;
+  state.currentStep = state.currentEmergency.steps[idx];
+  document.getElementById('step-current').textContent = state.currentStep.n;
+  let anyActivated = false;
+  state.currentStep.alerts.forEach((a) => {
+    if (a.optional) {
+      a._state = 'available';
+    } else {
+      a._activatedAt = Date.now();
+      a._state = 'active';
+      anyActivated = true;
+    }
+  });
+  renderAlerts();
+  if (anyActivated) alertBeep();
+  const isLast = (idx === state.currentEmergency.steps.length - 1);
+  if (!isLast) startPause();
+}
+
+function renderAlerts() {
+  const container = document.getElementById('alerts-container');
+  container.innerHTML = '';
+  // Show only alerts that are 'active' or 'available'
+  // Deactivated ('done') alerts are HIDDEN from the screen.
+  const items = [];
+  state.currentEmergency.steps.forEach((step, sIdx) => {
+    if (sIdx > state.currentStepIndex) return;
+    step.alerts.forEach((alert, aIdx) => {
+      if (alert._state === 'active' || alert._state === 'available') {
+        items.push({ alert, sIdx, aIdx, stepN: step.n });
+      }
+    });
+  });
+  const order = { active: 0, available: 1 };
+  items.sort((a, b) => order[a.alert._state] - order[b.alert._state]);
+
+  if (items.length === 0) {
+    container.innerHTML = '<div class="empty-state">✓ Todas las alertas activas han sido desactivadas. Esperando la siguiente actividad...</div>';
+    return;
+  }
+
+  items.forEach(({ alert, sIdx, aIdx, stepN }) => {
+    const card = document.createElement('div');
+    const brigadeClass = 'brigade-' + alert.brigade;
+    let stateClass = alert._state === 'active' ? 'active' : 'available';
+    card.className = `alert-card ${brigadeClass} ${stateClass}`;
+    const brigadeName = BRIGADE_NAMES[alert.brigade] || alert.brigade;
+
+    let extraNote = '';
+    if (alert.askArea) extraNote = '<br><small style="opacity:0.8;">Se solicitará el área de la emergencia al desactivar</small>';
+    if (alert.askEvacuated) extraNote = '<br><small style="opacity:0.8;">Se solicitará el número total de evacuados</small>';
+    if (alert.askWoundedOnActivate) extraNote = '<br><small style="opacity:0.8;">Al activar se preguntará cuántos heridos necesitan atención</small>';
+    if (alert.askWoundedAttended) extraNote = '<br><small style="opacity:0.8;">Al desactivar se preguntará cuántos heridos se atendieron</small>';
+    if (alert.isFinal) extraNote = '<br><small style="opacity:0.8;">⚠️ Alerta final: genera el reporte</small>';
+
+    let actionRow = '';
+    if (alert._state === 'active') {
+      actionRow = '<span class="deactivate-hint">👆 Toca para DESACTIVAR</span>';
+    } else if (alert._state === 'available') {
+      actionRow = `<button class="activate-btn" onclick="event.stopPropagation(); activateOptional(${sIdx},${aIdx})">⊕ ACTIVAR ALERTA</button>`;
+    }
+
+    card.innerHTML = `
+      <div>
+        <div><span class="step-badge">Actividad ${stepN}</span><span class="brigade-tag">🛡️ ${brigadeName}</span></div>
+        <div class="alert-text" style="margin-top:8px;">${alert.text}${extraNote}</div>
+      </div>
+      <div class="alert-status">
+        <span></span>
+        ${actionRow}
+      </div>
+    `;
+    if (alert._state === 'active') {
+      card.onclick = () => deactivateAlert(sIdx, aIdx);
+    }
+    container.appendChild(card);
+  });
+}
+
+function deactivateAlert(sIdx, aIdx) {
+  const alert = state.currentEmergency.steps[sIdx].alerts[aIdx];
+  if (alert._state !== 'active') return;
+
+  if (alert.askArea) {
+    openModal({
+      title: '📍 Área de la emergencia',
+      text: 'Indica el área específica donde ocurre la emergencia (ej. "Laboratorio 2", "Almacén nivel 3"):',
+      input: true, placeholder: 'Área de la emergencia',
+      onConfirm: (val) => {
+        state.area = val || 'No especificada';
+        completeDeactivation(sIdx, aIdx);
+      }
+    });
+    return;
+  }
+  if (alert.askEvacuated) {
+    openModal({
+      title: '👥 Conteo de personas evacuadas',
+      text: 'Indica el número total de personas evacuadas al punto de reunión:',
+      input: true, inputType: 'number', placeholder: 'Total de evacuados',
+      onConfirm: (val) => {
+        const n = parseInt(val, 10);
+        state.evacuatedCount = (!isNaN(n) && n >= 0) ? n : 0;
+        completeDeactivation(sIdx, aIdx);
+      }
+    });
+    return;
+  }
+  if (alert.askWoundedAttended) {
+    const necesarios = state.heridosNecesarios;
+    let extraInfo = '';
+    if (necesarios !== null && necesarios !== undefined) {
+      extraInfo = ` (se reportaron ${necesarios} heridos en la búsqueda)`;
+    }
+    openModal({
+      title: '🚑 Heridos atendidos',
+      text: 'Indica cuántos heridos fueron efectivamente atendidos por la brigada de Primeros Auxilios' + extraInfo + ':',
+      input: true, inputType: 'number', placeholder: 'Cantidad de heridos atendidos',
+      onConfirm: (val) => {
+        const n = parseInt(val, 10);
+        state.heridosAtendidos = (!isNaN(n) && n >= 0) ? n : 0;
+        completeDeactivation(sIdx, aIdx);
+      }
+    });
+    return;
+  }
+  completeDeactivation(sIdx, aIdx);
+}
+
+function completeDeactivation(sIdx, aIdx) {
+  const alert = state.currentEmergency.steps[sIdx].alerts[aIdx];
+  alert._state = 'done';
+  alert._deactivatedAt = Date.now();
+  state.records.push({
+    number: state.currentEmergency.steps[sIdx].n,
+    text: alert.text,
+    brigade: alert.brigade,
+    brigadeName: BRIGADE_NAMES[alert.brigade],
+    activatedAt: alert._activatedAt,
+    deactivatedAt: alert._deactivatedAt,
+    durationMs: alert._deactivatedAt - alert._activatedAt,
+    isFinal: !!alert.isFinal,
+    askEvacuated: !!alert.askEvacuated,
+    askWoundedAttended: !!alert.askWoundedAttended,
+  });
+  beep(500, 120, 'sine');
+  renderAlerts();
+  if (alert.isFinal) {
+    setTimeout(finishEmergency, 800);
+  }
+}
+
+function activateOptional(sIdx, aIdx) {
+  const alert = state.currentEmergency.steps[sIdx].alerts[aIdx];
+  if (alert._state !== 'available') return;
+  if (alert.askWoundedOnActivate) {
+    openModal({
+      title: '🩹 Heridos detectados',
+      text: 'Indica cuántos heridos se localizaron y deben ser atendidos por la brigada de Primeros Auxilios:',
+      input: true, inputType: 'number', placeholder: 'Cantidad de heridos',
+      onConfirm: (val) => {
+        const n = parseInt(val, 10);
+        state.heridosNecesarios = (!isNaN(n) && n >= 0) ? n : 0;
+        alert._state = 'active';
+        alert._activatedAt = Date.now();
+        alertBeep();
+        renderAlerts();
+      }
+    });
+    return;
+  }
+  alert._state = 'active';
+  alert._activatedAt = Date.now();
+  alertBeep();
+  renderAlerts();
+}
+
+function startPause() {
+  const banner = document.getElementById('pause-banner');
+  banner.style.display = 'block';
+  state.pauseCountdown = state.pauseSeconds;
+  document.getElementById('pause-countdown').textContent = state.pauseCountdown;
+  if (state.pauseTimer) clearInterval(state.pauseTimer);
+  state.pauseTimer = setInterval(() => {
+    state.pauseCountdown--;
+    document.getElementById('pause-countdown').textContent = state.pauseCountdown;
+    if (state.pauseCountdown <= 0) {
+      clearInterval(state.pauseTimer);
+      state.pauseTimer = null;
+      banner.style.display = 'none';
+      loadStep(state.currentStepIndex + 1);
+    }
+  }, 1000);
+}
+
+function changeSpeed(delta) {
+  state.pauseSeconds = Math.max(0, Math.min(60, state.pauseSeconds + delta));
+  document.getElementById('speed-val').textContent = state.pauseSeconds;
+  if (state.pauseCountdown > state.pauseSeconds) {
+    state.pauseCountdown = state.pauseSeconds;
+    document.getElementById('pause-countdown').textContent = state.pauseCountdown;
+  }
+}
+
+function confirmStop() {
+  openModal({
+    title: '⏹ Detener emergencia',
+    text: '¿Confirmas que deseas detener la gestión de la emergencia? Se mostrará el reporte parcial con las alertas registradas hasta ahora.',
+    input: false, confirmLabel: 'Sí, detener',
+    onConfirm: () => finishEmergency()
+  });
+}
+
+function cleanupEmergency() {
+  if (state.pauseTimer) { clearInterval(state.pauseTimer); state.pauseTimer = null; }
+  if (state.elapsedTimer) { clearInterval(state.elapsedTimer); state.elapsedTimer = null; }
+  document.getElementById('pause-banner').style.display = 'none';
+}
+
+function finishEmergency() {
+  cleanupEmergency();
+  completionBeep();
+  renderReport();
+  showScreen('report');
+  document.getElementById('permanent-controls').style.display = 'none';
+}
+
+// ============ REPORT ============
+function fmtTime(ts) {
+  if (!ts) return '—';
+  return new Date(ts).toLocaleTimeString('es-MX', { hour12: false });
+}
+function fmtDuration(ms) {
+  const s = Math.floor(ms/1000);
+  if (s < 60) return s + 's';
+  const m = Math.floor(s/60); const r = s % 60;
+  return `${m}m ${r}s`;
+}
+function brigadeBadgeColor(brigade) {
+  const map = {
+    "primeros-auxilios": "#7f8c8d",
+    "combate-de-incendios": "#e74c3c",
+    "busqueda-y-rescate": "#2980b9",
+    "evacuacion": "#27ae60",
+    "comunicacion": "#d4ac0d",
+    "cualquier-brigada": "#7f8c8d",
+    "responsable-del-inmueble": "#34495e",
+    "todas-las-brigadas": "#8e44ad",
+  };
+  return map[brigade] || "#7f8c8d";
+}
+
+function renderReport() {
+  document.getElementById('report-type').textContent = state.currentEmergency ? state.currentEmergency.title : '—';
+  const total = state.startedAt ? Date.now() - state.startedAt : 0;
+  document.getElementById('report-duration').textContent = fmtDuration(total);
+  document.getElementById('report-alerts').textContent = state.records.length;
+  document.getElementById('report-evacuated').textContent =
+    (state.evacuatedCount != null) ? state.evacuatedCount : '—';
+  document.getElementById('report-heridos-nec').textContent =
+    (state.heridosNecesarios != null) ? state.heridosNecesarios : '—';
+  document.getElementById('report-heridos-att').textContent =
+    (state.heridosAtendidos != null) ? state.heridosAtendidos : '—';
+
+  let subtitle = `Inicio: ${fmtTime(state.startedAt)}  ·  Fin: ${fmtTime(Date.now())}`;
+  if (state.area) subtitle += `  ·  Área: ${state.area}`;
+  document.getElementById('report-subtitle').textContent = subtitle;
+
+  const tbody = document.getElementById('report-tbody');
+  tbody.innerHTML = '';
+  state.records.forEach((r, i) => {
+    const tr = document.createElement('tr');
+    let extra = '';
+    if (r.askEvacuated && state.evacuatedCount != null) extra += ` <em style="color:#27ae60;">(${state.evacuatedCount} evacuados)</em>`;
+    if (r.askWoundedAttended && state.heridosAtendidos != null) extra += ` <em style="color:#c0392b;">(${state.heridosAtendidos} heridos atendidos)</em>`;
+    tr.innerHTML = `
+      <td><strong>${i+1}</strong></td>
+      <td>${r.text}${extra}</td>
+      <td><span class="badge" style="background:${brigadeBadgeColor(r.brigade)};">${r.brigadeName}</span></td>
+      <td>${fmtTime(r.activatedAt)}</td>
+      <td>${fmtTime(r.deactivatedAt)}</td>
+      <td>${fmtDuration(r.durationMs)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ============ MODAL ============
+let modalConfig = null;
+function openModal(cfg) {
+  modalConfig = cfg;
+  document.getElementById('modal-title').textContent = cfg.title || 'Confirmar';
+  document.getElementById('modal-text').textContent = cfg.text || '';
+  const input = document.getElementById('modal-input');
+  if (cfg.input) {
+    input.style.display = 'block';
+    input.type = cfg.inputType || 'text';
+    input.placeholder = cfg.placeholder || '';
+    input.value = '';
+    setTimeout(() => input.focus(), 100);
+  } else {
+    input.style.display = 'none';
+  }
+  document.getElementById('modal-ok').textContent = cfg.confirmLabel || 'Aceptar';
+  document.getElementById('modal-bg').classList.add('active');
+}
+function closeModal() {
+  document.getElementById('modal-bg').classList.remove('active');
+  modalConfig = null;
+}
+function confirmModal() {
+  if (!modalConfig) return;
+  const val = document.getElementById('modal-input').value;
+  const cb = modalConfig.onConfirm;
+  closeModal();
+  if (cb) cb(val);
+}
+document.getElementById('modal-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); confirmModal(); }
+});
+</script>
+</body>
+</html>
